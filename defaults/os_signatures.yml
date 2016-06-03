@@ -1,0 +1,36 @@
+- os_family: iLo
+  pattern: '.*SM CLP Version: (?P<major>\d*)\.?(?P<minor>\d*)\.?(?P<patch>\d*).*'
+  query: version
+  version: iLo {major}.{minor}.{patch}
+- os_family: VmWare
+  pattern: ^VMkernel (?P<host_name>[\w\d\.\-_]*)\s(?P<major>\d*)\.?(?P<minor>\d*)?\.?(?P<patch>\d*)?
+  query: uname -a
+  version: VmWare {major}.{minor}.{patch}
+- os_family: DXOS
+  pattern: .*OmniOS v(?P<major>\d.*) r(?P<revision>\d.*)
+  query: cat /etc/*release
+  version: DXOS {major} r{revision}
+- os_family: Linux
+  pattern: .*Ubuntu (?P<major>\d*)\.(?P<minor>\d*).*
+  query: cat /etc/*issue
+  version: Ubuntu {major}.{minor}
+- os_family: Linux
+  pattern: Red Hat .* (?P<major>\d*)\.(?P<minor>\d*) .*
+  query: cat /etc/*issue
+  version: Red Hat Enterprise {major}.{minor}
+- os_family: Linux
+  pattern: .*Debian GNU/Linux (?P<major>\d*)\.?(?P<minor>\d*)?.*
+  query: cat /etc/*issue
+  version: Debian GNU/Linux {major}
+- os_family: Illumos
+  pattern: .*OpenIndiana.*oi_(?P<major>\d*)\.(?P<minor>\d*)\.(?P<patch>\d*).*X.*
+  query: cat /etc/*release
+  version: OpenIndiana {major}.{minor}.{patch}
+- os_family: Solaris
+  pattern: .*Solaris (?P<major>\d*).*
+  query: cat /etc/*release
+  version: Solaris {major}
+- os: <generic>
+  pattern: ^(?P<os_family>[\w\d\.\-_]*) (?P<host_name>[\w\d\.\-_]*)\s(?P<major>\d*)\.?\s?(?P<minor>\d*)?\.?\s?(?P<patch>\d*)?.*
+  query: uname -a
+  version: '{os_family} {major}.{minor}'

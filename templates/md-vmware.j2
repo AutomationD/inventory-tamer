@@ -1,0 +1,8 @@
+{% for group in inventory -%}
+    {%- for esx_host in inventory[group] -%}
+        - {{ esx_host['host_name'] -}} {% if virtual_machine['ip_address'] != 'None' %} (vCenter: {{ esx_host['vmware_host_info']['managed_by'] }}){% endif %}
+        {%- for virtual_machine in esx_host['vmware_host_info']['virtual_machines'] %}
+            - {{ virtual_machine['name'] }}{% if virtual_machine['ip_address'] != 'None' %} ({{ virtual_machine['ip_address'] }}){%- endif %}
+        {%- endfor %}
+    {%- endfor %}
+{%- endfor %}

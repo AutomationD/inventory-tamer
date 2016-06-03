@@ -1,0 +1,13 @@
+Unknown,VM Name,Host IP,Group,Managed By,Username,Password,OS Version,Status,ESXi Host,Description
+{% for group in inventory -%}
+{% for esx_host in inventory[group] -%}
+{% if not esx_host['username'] and not esx_host['password'] -%}
+{% set unknown = "1" -%}
+{% else -%}
+{% set unknown = "0" -%}
+{% endif -%}
+{% for virtual_machine in esx_host['vmware_host_info']['virtual_machines'] -%}
+{{ unknown }},{{ virtual_machine['name'] }},{{ virtual_machine['ip_address'] }},{{ group }},"{{ esx_host['vmware_host_info']['managed_by'] }}",,,{{ virtual_machine['guest'] }},{{ virtual_machine['state'] }},{{ esx_host['host_name'] }},"{{ virtual_machine['annotation'] }}"
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}

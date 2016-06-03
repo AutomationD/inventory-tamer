@@ -1,0 +1,19 @@
+{% for group in inventory -%}
+[{{ group }}]
+{% for host in inventory[group] -%}
+{% if not host['username'] and not host['password'] -%}
+{% set unknown = "#" -%}
+{% else -%}
+{% set unknown = "" -%}
+{% endif -%}
+{% if host['os_family'] ==  Windows -%}
+{% set ansible_user_text = "ansible_user" -%}
+{% set ansible_password_text = "ansible_pass" -%}
+{% else -%}
+{% set ansible_user_text = "ansible_ssh_user" -%}
+{% set ansible_password_text = "ansible_ssh_pass" -%}
+{% endif -%}
+# {{ host['host_ip'] }}, OS: {{ host['os_version'] }}
+{{ unknown }}{{ host['host_name'] }} {{ ansible_user_text }}={{ host['username'] }} {{ ansible_password_text }}={{ host['password']}}
+{% endfor -%}
+{% endfor -%}

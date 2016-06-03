@@ -1,0 +1,11 @@
+Unknown,Host name,Host IP,Group,Username,Password,OS Version
+{% for group in inventory -%}
+{% for host in inventory[group] -%}
+{% if not host['username'] and not host['password'] -%}
+{% set unknown = "1" -%}
+{% else -%}
+{% set unknown = "0" -%}
+{% endif -%}
+{{ unknown }},{{ host['host_ip'] }},{{ host['host_name'] }},{{ group }},{{ host['username'] }},{{ host['password']}},{{ host['os_version'] }}
+{% endfor -%}
+{% endfor -%}
