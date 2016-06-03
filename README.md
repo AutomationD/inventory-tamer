@@ -1,4 +1,4 @@
-# Discovery
+# Inventory Tamer
 ## Quickstart:
 ```
 pip install git+https://github.com/kireevco/inventory-tamer
