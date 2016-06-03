@@ -23,8 +23,24 @@ _Add your ssh username/password to credentials.yml_
 sudo it scan -t 192.168.1.1/24
 ```
 
-### Run Report
+### Run Default Report
 _Use the subnet that you ran scan for_
 ```
 it report -t 192.168.1.1/24
 ```
+
+### Run VmWare CSV Report
+_Use the subnet that you ran scan for_
+```
+it report --name csv-vmware -t 192.168.1.1/24
+```
+
+### Run VmWare Markdown Report
+_Use the subnet that you ran scan for_
+```
+it report --name md-vmware -t 192.168.1.1/24
+```
+
+
+
+
