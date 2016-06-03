@@ -1,11 +1,30 @@
-# Inventory Tamer
-## Quickstart:
+# Inventory Tamer Quickstart
+### Install package
 ```
 pip install git+https://github.com/kireevco/inventory-tamer
-mkdir -p ~/inventory && ~/inventory
+```
+
+### Create a working directory
+```
+mkdir -p ~/inventory && cd ~/inventory
+```
+
+### Initialize Tamer
+```
 it init
-# Edit: add your ssh username/password to credentials.yml  
-sudo it scan -t <your_host-or_network>
 ```
 
 
+### Configure Test Credentials
+_Add your ssh username/password to credentials.yml_
+
+### Run Scan
+```
+sudo it scan -t 192.168.1.1/24
+```
+
+### Run Report
+_Use the subnet that you ran scan for_
+```
+it report -t 192.168.1.1/24
+```
