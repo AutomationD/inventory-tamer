@@ -42,9 +42,6 @@ import yaml
 from operator import itemgetter
 import socket
 
-
-from rdpy.protocol.rdp import rdp
-
 from jinja2 import Environment, PackageLoader,FileSystemLoader, Undefined
 JINJA2_ENVIRONMENT_OPTIONS = { 'undefined' : Undefined }
 

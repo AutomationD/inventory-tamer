@@ -1,7 +1,8 @@
 # Inventory Tamer Quickstart
 ### Install package
+__It will be installed into your bin directory. And will be accessible via `it` or `inventory-tamer` command__
 ```
-pip install git+https://github.com/kireevco/inventory-tamer
+sudo pip install git+https://github.com/kireevco/inventory-tamer
 ```
 
 ### Create a working directory
