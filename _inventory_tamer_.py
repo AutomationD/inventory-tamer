@@ -74,7 +74,7 @@ class InventoryTamer(object):
 
         self.credentials_file = os.path.join(self.config_dir, 'credentials.yml')
         self.os_signatures_file = os.path.join(self.config_dir, 'os_signatures.yml')
-        self.verbose = True
+        self.verbose = False
         self.inventory = {}
         self.ansible_playbook = []
         self.credentials = []
@@ -388,7 +388,13 @@ class InventoryTamer(object):
             click.secho("{host} Found {count} virtual machines".format(host=host, count=len(virtual_machines)), fg='green')
 
         except vmodl.MethodFault as error:
-            print("Caught vmodl fault : " + error.msg)
+            if error.msg:
+                if self.verbose:
+                    click.secho("Caught vmodl fault : " + error.msg, fg='red')
+            else:
+                if self.verbose:
+                    click.secho("Caught vmodl fault (unknown)", fg='red')
+            click.secho("{host} Can't find any virtual machines".format(host=host, count=len(virtual_machines)), fg='magenta')
             return False
         return vmware_host_info
 
@@ -456,7 +462,6 @@ class InventoryTamer(object):
         except Exception as error:
             return False, 'Unknown'
 
-        print("Passed connect")
         if conn is None:
             try:
                 ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command, timeout=2)
@@ -475,7 +480,6 @@ class InventoryTamer(object):
 
             except Exception as error:
                 return False, 'Unknown'
-            print("Passed exec")
             return ssh_stdout.read(), ssh_stderr.read()
         else:
             return False, error
@@ -503,6 +507,7 @@ class InventoryTamer(object):
         # We need to set inventory file names separately, because we do it in multiple tasks and we want to be
         # consistent + don't duplicate code
         target_prefix = target.lower().replace('/', '-').replace('\\', '-')
+
         self.discovered_inventory_file = os.path.join(self.discovered_dir, '{target_prefix}-discovered.yml'.format(target_prefix=target_prefix))
         self.ansible_inventory_file = os.path.join(self.home, 'inventory/{report_name}-{target_prefix}-inventory-tamer'.format(target_prefix=target_prefix, report_name=report_name))
         self.csv_inventory_file = os.path.join(self.home, '{target_prefix}-{report_name}.csv'.format(target_prefix=target_prefix, report_name=report_name))
@@ -539,17 +544,28 @@ def cli(ctx, home, verbose):
 
 
 @cli.command('scan')
-@click.option('--target', '-t', default='192.168.1.0/24', required=True)
+@click.option('--target', '-t', default=None)
+@click.option('--host-list', '-l')
 @pass_inventory_tamer
-def scan(tamer, target):
+def scan(tamer, target, host_list):
     """
     Runs tamer
     """
 
+
+
     tamer.credentials = tamer.load_credentials()
     tamer.os_signatures = tamer.load_os_signatures()
     tamer.scan_target = target
-    tamer.set_inventory_file_names(target)
+
+    if not target and not host_list:
+        click.secho("Target or Host list are not specified", fg='red')
+        exit(1)
+    if target:
+        tamer.set_inventory_file_names(target)
+    else:
+        tamer.set_inventory_file_names(host_list)
+
 
 
     username = ''
@@ -563,8 +579,17 @@ def scan(tamer, target):
                 click.secho("Network connection seems to exist", fg='green')
             nm = nmap.PortScanner()
 
-            click.secho("{target}: Starting a network scan.".format(target=target), fg="yellow")
-            nm.scan(hosts=target, arguments='-p 22,3389,5900,443,5988,199,80 --open')
+            # If list has been provided
+            if host_list:
+                if os.path.isfile(host_list):
+                    click.secho("Found {host_list}. Starting a network scan.".format(host_list=host_list), fg="yellow")
+                    nm.scan(hosts=target, arguments="-iL {host_list} -p 22,3389,5900,443,5988,199,80 --open".format(host_list=host_list))
+                else:
+                    click.secho("Can't find {list}.".format(list=list), fg="red")
+                    exit(1)
+            else:
+                click.secho("{target}: Starting a network scan.".format(target=target), fg="yellow")
+                nm.scan(hosts=target, arguments='-p 22,3389,5900,443,5988,199,80 --open')
             # if nm:
 
             # nm.scan(hosts=target, arguments='-O -T4')
@@ -602,6 +627,7 @@ def scan(tamer, target):
                             #     os_family = "ilo"
                                 if os_family == 'VmWare':
                                     vmware_host_info = tamer.get_vmware_host_info(host, username, password)
+
 
                         # RDP
                         elif 3389 in tcp_ports and tcp_ports[3389]['state'] == 'open':
@@ -659,14 +685,23 @@ def scan(tamer, target):
 @cli.command()
 @click.option('--name', '-n')
 @click.option('--group')
-@click.option('--target', '-t', default='192.168.1.0/24', required=True)
+@click.option('--target', '-t', default=None, required=True)
+@click.option('--host-list', '-l')
 @pass_inventory_tamer
-def report(tamer, name, group, target):
+def report(tamer, name, group, target, host_list):
     """
     """
-    tamer.scan_target = target
+    if host_list:
+        target = host_list
+
+    if target:
+        tamer.scan_target = target
+    else:
+        click.secho("Error: target or host-list is empty")
 
     tamer.set_inventory_file_names(target, name)
+
+
     if os.path.isfile(tamer.discovered_inventory_file):
         if not name:
             name = 'ansible'

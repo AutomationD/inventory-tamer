@@ -1,4 +1,14 @@
-# Inventory Tamer Quickstart
+# Inventory Tamer 
+
+## What is it?
+Inventory Tamer is a command line utility that solves the following issues in your network:
+- Untracked hosts (is there a host?)
+- Stale static IP Address list (is this IP used?) 
+
+## How does it work?
+The power of Nmap is used to scan a given range
+
+## Quickstart
 ### Install package
 ```
 pip install git+https://github.com/kireevco/inventory-tamer
