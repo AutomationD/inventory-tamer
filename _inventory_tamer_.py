@@ -71,6 +71,7 @@ class InventoryTamer(object):
 
         self.credentials_file = os.path.join(self.config_dir, 'credentials.yml')
         self.os_signatures_file = os.path.join(self.config_dir, 'os_signatures.yml')
+
         self.verbose = False
         self.inventory = {}
         self.ansible_playbook = []
@@ -256,6 +257,16 @@ class InventoryTamer(object):
                 return host
         return host_name
 
+    def load_exclude_list(self, exclude_list):
+        exclude_list = []
+        if os.path.isfile(exclude_list):
+            with open(exclude_list, 'r') as exclude_list_file:
+                exlude_hosts = exclude_list_file.read().splitlines()
+                exclude_list_file.close()
+        return exclude_list
+
+
+
     def load_inventory(self):
         with open(self.discovered_inventory_file, 'r') as yaml_file:
             self.inventory = dict(yaml.load(yaml_file.read()))
@@ -306,7 +317,6 @@ class InventoryTamer(object):
             template = env.get_template('{format}.j2'.format(format=format))
             report_file.write(template.render(inventory=self.get_filtered_inventory(group)))
             report_file.close()
-
 
 
     def get_filtered_inventory(self, group):
@@ -543,11 +553,14 @@ def cli(ctx, home, verbose):
 @cli.command('scan')
 @click.option('--target', '-t', default=None)
 @click.option('--host-list', '-l')
+@click.option('--exclude-list', '-e')
 @pass_inventory_tamer
-def scan(tamer, target, host_list):
+def scan(tamer, target, host_list, exclude_list):
     """
     Runs tamer
     """
+
+    exclude_hosts = []
 
 
 
@@ -563,7 +576,9 @@ def scan(tamer, target, host_list):
     else:
         tamer.set_inventory_file_names(host_list)
 
-
+    # If any hosts should be excluded
+    if exclude_list:
+        exclude_hosts = tamer.load_exclude_list()
 
     username = ''
     password = ''
@@ -580,7 +595,7 @@ def scan(tamer, target, host_list):
             if host_list:
                 if os.path.isfile(host_list):
                     click.secho("Found {host_list}. Starting a network scan.".format(host_list=host_list), fg="yellow")
-                    nm.scan(hosts=target, arguments="-iL {host_list} -p 22,3389,5900,443,5988,199,80 --open".format(host_list=host_list))
+                    nm.scan(arguments="-iL {host_list} -p 22,3389,5900,443,5988,199,80 --open".format(host_list=host_list))
                 else:
                     click.secho("Can't find {list}.".format(list=list), fg="red")
                     exit(1)
@@ -611,6 +626,10 @@ def scan(tamer, target, host_list):
                     vmware_host_info = None
 
                     click.secho("---------------- {host} ----------------".format(host=host), fg="yellow")
+                    if host in exclude_hosts:
+                        click.secho("{host}: excluded.")
+                        continue
+
                     if tamer.ping(host):
                         # SSH
                         if 22 in tcp_ports and tcp_ports[22]['state'] == 'open':
@@ -637,7 +656,7 @@ def scan(tamer, target, host_list):
                             click.secho("{host}: No ports opened".format(host=host), fg='red')
 
                         host_name = tamer.get_host_name(nm, host, username, password, os_family)
-                        group_name = "tamer-{os_family}".format(os_family=os_family.lower())
+                        group_name = "inventory-{os_family}".format(os_family=os_family.lower())
 
                         if not host_name:
                             click.secho("{host}: can't find host_name.".format(host=host), fg='red')
@@ -682,7 +701,7 @@ def scan(tamer, target, host_list):
 @cli.command()
 @click.option('--name', '-n')
 @click.option('--group')
-@click.option('--target', '-t', default=None, required=True)
+@click.option('--target', '-t', default=None)
 @click.option('--host-list', '-l')
 @pass_inventory_tamer
 def report(tamer, name, group, target, host_list):
